@@ -1,0 +1,50 @@
+version: "2"
+services:
+  reg:
+    build: 
+      context: ./
+      dockerfile: ${BUILD_FILE}
+    environment:
+      - OTEL_AGENT=localhost:4317
+    command: ["-jar", "app.jar", "registration"]
+    ports:
+      - "1111:1111"
+    networks:
+      microservice-demo-network:
+        aliases:
+          - reg
+
+  acc:
+    build: 
+      context: ./
+      dockerfile: ${BUILD_FILE}
+    environment:
+      - OTEL_AGENT=localhost:4317
+    command: ["-jar", "app.jar", "accounts","--registration.server.hostname=reg"]
+    ports:
+      - "2222:2222"
+    networks:
+      microservice-demo-network:
+        aliases:
+          - acc
+
+  web:
+    build: 
+      context: ./
+      dockerfile: ${BUILD_FILE}
+    environment:
+      - OTEL_AGENT=localhost:4317
+    command: ["-jar", "app.jar", "web","--registration.server.hostname=reg"]
+    ports:
+      - "3333:3333"
+    depends_on:
+      - reg
+      - acc
+    networks:
+      microservice-demo-network:
+        aliases:
+          - web
+
+networks:
+  microservice-demo-network:
+    driver: bridge
