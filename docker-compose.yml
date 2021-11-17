@@ -1,40 +1,118 @@
 version: "2"
 services:
+  # Jaeger
+  jaeger-all-in-one:
+    image: jaegertracing/all-in-one:latest
+    env_file:
+      - proxy.env
+    ports:
+      - "16686:16686"
+      - "14268"
+      - "14250"
+    networks:
+      microservice-demo-network:
+        aliases:
+          - jaeger
+  # Zipkin
+  zipkin-all-in-one:
+    image: openzipkin/zipkin:latest
+    env_file:
+      - proxy.env
+    ports:
+      - "9411:9411"
+    networks:
+      microservice-demo-network:
+        aliases:
+          - zipkin
+  #Opentelemetry collector
+  otel-collector:
+    image: ${OTELCOL_IMG}
+    command: ["--config=/etc/otel-collector-config.yaml"]
+    env_file:
+      - proxy.env
+    volumes:
+      - ./otel-collector-config.yaml:/etc/otel-collector-config.yaml
+      - ./data/:/usr/data/
+    ports:
+      - "1888:1888"   # pprof extension
+      - "8888:8888"   # Prometheus metrics exposed by the collector
+      - "8889:8889"   # Prometheus exporter metrics
+      - "13133:13133" # health_check extension
+      - "4317:4317"   # OTLP gRPC receiver
+      - "55670:55679" # zpages extension
+    depends_on:
+      - jaeger-all-in-one
+      - zipkin-all-in-one
+    networks:
+      microservice-demo-network:
+        aliases:
+          - otelagent
+  #Registration service
   reg:
     build: 
       context: ./
       dockerfile: ${BUILD_FILE}
     environment:
-      - OTEL_AGENT=localhost:4317
+      - otel.javaagent.configuration-file=/usr/src/app/otel.props
+      - OTEL_METRICS_EXPORTER=none
+      - OTEL_TRACES_EXPORTER=otlp
+      - OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=http://otelagent:4317
+      #- OTEL_EXPORTER_OTLP_TRACES_PROTOCOL=protobuf
+      - OTEL_RESOURCE_ATTRIBUTES="service.name=reg,application=md"
+      - JAVA_OPTIONS="-Dotel.metrics.exporter=none -Dota.exporter=otlp -Dotel.traces.exporter=otlp -Dotel.exporter.otlp.traces.endpoint=http://otelagent:4317 -Dotel.resource.attributes=service.name=registration -Dotel.javaagent.debug=false -Dotel.instrumentation.jdbc-datasource.enabled=true"
+      - JAVA_TOOL_OPTIONS="-javaagent:opentelemetry-javaagent-all.jar"
     command: ["-jar", "app.jar", "registration"]
+    volumes:
+      - ./opentelemetry-javaagent-all.jar:/usr/src/app/opentelemetry-javaagent-all.jar
+      - ./otel.props:/usr/src/app/otel.props
     ports:
       - "1111:1111"
     networks:
       microservice-demo-network:
         aliases:
           - reg
-
+  #accounts service
   acc:
     build: 
       context: ./
       dockerfile: ${BUILD_FILE}
     environment:
-      - OTEL_AGENT=localhost:4317
+      - otel.javaagent.configuration-file=/usr/src/app/otel.props
+      - OTEL_METRICS_EXPORTER=none
+      - OTEL_TRACES_EXPORTER=otlp
+      - OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=http://otelagent:4317
+      #- OTEL_EXPORTER_OTLP_TRACES_PROTOCOL=protobuf
+      - OTEL_RESOURCE_ATTRIBUTES="service.name=acc,application=md"
+      - JAVA_OPTIONS="-Dotel.metrics.exporter=none -Dota.exporter=otlp -Dotel.traces.exporter=otlp -Dotel.exporter.otlp.traces.endpoint=http://otelagent:4317 -Dotel.resource.attributes=service.name=accounts -Dotel.javaagent.debug=false -Dotel.instrumentation.jdbc-datasource.enabled=true"
+      - JAVA_TOOL_OPTIONS="-javaagent:opentelemetry-javaagent-all.jar"
     command: ["-jar", "app.jar", "accounts","--registration.server.hostname=reg"]
+    volumes:
+      - ./opentelemetry-javaagent-all.jar:/usr/src/app/opentelemetry-javaagent-all.jar
+      - ./otel.props:/usr/src/app/otel.props
     ports:
       - "2222:2222"
     networks:
       microservice-demo-network:
         aliases:
           - acc
-
+  #Frontend
   web:
     build: 
       context: ./
       dockerfile: ${BUILD_FILE}
     environment:
-      - OTEL_AGENT=localhost:4317
+      - otel.javaagent.configuration-file=/usr/src/app/otel.props
+      - OTEL_METRICS_EXPORTER=none
+      - OTEL_TRACES_EXPORTER=otlp
+      - OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=http://otelagent:4317
+      #- OTEL_EXPORTER_OTLP_TRACES_PROTOCOL=protobuf
+      - OTEL_RESOURCE_ATTRIBUTES="service.name=web,application=md"
+      - JAVA_OPTIONS="-Dotel.metrics.exporter=none -Dota.exporter=otlp -Dotel.traces.exporter=otlp -Dotel.exporter.otlp.traces.endpoint=http://otelagent:4317 -Dotel.resource.attributes=service.name=Frontend -Dotel.javaagent.debug=false -Dotel.instrumentation.jdbc-datasource.enabled=true"
+      - JAVA_TOOL_OPTIONS="-javaagent:opentelemetry-javaagent-all.jar"
     command: ["-jar", "app.jar", "web","--registration.server.hostname=reg"]
+    volumes:
+      - ./opentelemetry-javaagent-all.jar:/usr/src/app/opentelemetry-javaagent-all.jar
+      - ./otel.props:/usr/src/app/otel.props
     ports:
       - "3333:3333"
     depends_on:

@@ -1,0 +1,38 @@
+receivers:
+  otlp:
+    protocols:
+      grpc:
+
+exporters:
+  zipkin:
+    endpoint: "http://zipkin-all-in-one:9411/api/v2/spans"
+    format: proto
+
+  jaeger:
+    endpoint: jaeger-all-in-one:14250
+    insecure: true
+  
+  file:
+    path: /usr/data/traces.json
+  #site24x7file:
+  #  path: /home/data/collector.json
+  #  url: https://catalyst.localsite24x7.com/arh/opentelementry
+  #  url: http://Shrini-2027/arh/opentelemetry
+
+processors:
+  batch:
+
+extensions:
+  health_check:
+  pprof:
+    endpoint: :1888
+  zpages:
+    endpoint: :55679
+
+service:
+  extensions: [pprof, zpages, health_check]
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [zipkin, jaeger, file]
