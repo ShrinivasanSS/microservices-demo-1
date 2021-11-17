@@ -1,0 +1,8 @@
+#java agent properties
+otel.metrics.exporter=none 
+otel.exporter=otlp 
+otel.traces.exporter=otlp 
+otel.exporter.otlp.traces.endpoint=http://otelagent:4317
+otel.resource.attributes=application.name=microservice
+otel.javaagent.debug=false
+otel.instrumentation.jdbc-datasource.enabled=true

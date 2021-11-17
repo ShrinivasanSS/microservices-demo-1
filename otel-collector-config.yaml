@@ -14,6 +14,10 @@ exporters:
   
   file:
     path: /usr/data/traces.json
+  
+  newrelic:
+    apikey: ${NEW_RELIC_LICENSE_KEY}
+    timeout: 30s
   #site24x7file:
   #  path: /home/data/collector.json
   #  url: https://catalyst.localsite24x7.com/arh/opentelementry
@@ -35,4 +39,4 @@ service:
     traces:
       receivers: [otlp]
       processors: [batch]
-      exporters: [zipkin, jaeger, file]
+      exporters: [zipkin, jaeger, file, newrelic]

@@ -58,7 +58,7 @@ services:
       - OTEL_TRACES_EXPORTER=otlp
       - OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=http://otelagent:4317
       #- OTEL_EXPORTER_OTLP_TRACES_PROTOCOL=protobuf
-      - OTEL_RESOURCE_ATTRIBUTES="service.name=reg,application=md"
+      - OTEL_RESOURCE_ATTRIBUTES=service.name=reg
       - JAVA_OPTIONS="-Dotel.metrics.exporter=none -Dota.exporter=otlp -Dotel.traces.exporter=otlp -Dotel.exporter.otlp.traces.endpoint=http://otelagent:4317 -Dotel.resource.attributes=service.name=registration -Dotel.javaagent.debug=false -Dotel.instrumentation.jdbc-datasource.enabled=true"
       - JAVA_TOOL_OPTIONS="-javaagent:opentelemetry-javaagent-all.jar"
     command: ["-jar", "app.jar", "registration"]
@@ -82,7 +82,7 @@ services:
       - OTEL_TRACES_EXPORTER=otlp
       - OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=http://otelagent:4317
       #- OTEL_EXPORTER_OTLP_TRACES_PROTOCOL=protobuf
-      - OTEL_RESOURCE_ATTRIBUTES="service.name=acc,application=md"
+      - OTEL_RESOURCE_ATTRIBUTES=service.name=acc
       - JAVA_OPTIONS="-Dotel.metrics.exporter=none -Dota.exporter=otlp -Dotel.traces.exporter=otlp -Dotel.exporter.otlp.traces.endpoint=http://otelagent:4317 -Dotel.resource.attributes=service.name=accounts -Dotel.javaagent.debug=false -Dotel.instrumentation.jdbc-datasource.enabled=true"
       - JAVA_TOOL_OPTIONS="-javaagent:opentelemetry-javaagent-all.jar"
     command: ["-jar", "app.jar", "accounts","--registration.server.hostname=reg"]
@@ -106,7 +106,7 @@ services:
       - OTEL_TRACES_EXPORTER=otlp
       - OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=http://otelagent:4317
       #- OTEL_EXPORTER_OTLP_TRACES_PROTOCOL=protobuf
-      - OTEL_RESOURCE_ATTRIBUTES="service.name=web,application=md"
+      - OTEL_RESOURCE_ATTRIBUTES=service.name=web
       - JAVA_OPTIONS="-Dotel.metrics.exporter=none -Dota.exporter=otlp -Dotel.traces.exporter=otlp -Dotel.exporter.otlp.traces.endpoint=http://otelagent:4317 -Dotel.resource.attributes=service.name=Frontend -Dotel.javaagent.debug=false -Dotel.instrumentation.jdbc-datasource.enabled=true"
       - JAVA_TOOL_OPTIONS="-javaagent:opentelemetry-javaagent-all.jar"
     command: ["-jar", "app.jar", "web","--registration.server.hostname=reg"]
