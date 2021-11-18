@@ -1,4 +1,38 @@
 receivers:
+  #filelog:
+  #  include: [ /usr/data/simple.log ]
+  #  start_at: beginning
+  #  operators:
+  #    - type: regex_parser
+  #      regex: '^(?P<time>\d{4}-\d{2}-\d{2}) (?P<sev>[A-Z]*) (?P<msg>.*)$'
+  #      timestamp:
+  #        parse_from: time
+  #        layout: '%Y-%m-%d'
+  #      severity:
+  #        parse_from: sev
+  #  converter:
+  #    max_flush_count: 10
+  #    flush_interval: 100ms
+  filelog:
+    include: [ /usr/src/logs/web.log ]
+    start_at: beginning
+    encoding: nop
+    include_file_path: true
+    operators:
+      - type: regex_parser
+        regex: '^(?P<time>\d{4}-\d{2}-\d{2}\s\d{2}:\d{2}:\d{2})\s-\s(?P<sev>[a-zA-Z]+)\s+-\s(?P<msg>.*)\s(?P<trid>trace_id=)(?P<traceid>.*)\s(?P<spid>span_id=)(?P<spanid>.*)\s(?P<tflg>trace_flags=.*)(?P<traceflag>.*)$$'
+        timestamp:
+          parse_from: time
+          layout: '%Y-%m-%d %H:%M:%S'
+        severity:
+          parse_from: sev
+        traceId:
+          parse_from: traceid
+        spanId:
+          parse_from: spanid
+    converter:
+      max_flush_count: 10
+      flush_interval: 100ms
   otlp:
     protocols:
       grpc:
@@ -14,15 +48,9 @@ exporters:
   
   file:
     path: /usr/data/traces.json
+  file/2:
+    path: /usr/data/logs.json
   
-  newrelic:
-    apikey: ${NEW_RELIC_LICENSE_KEY}
-    timeout: 30s
-  #site24x7file:
-  #  path: /home/data/collector.json
-  #  url: https://catalyst.localsite24x7.com/arh/opentelementry
-  #  url: http://Shrini-2027/arh/opentelemetry
-
 processors:
   batch:
 
@@ -39,4 +67,8 @@ service:
     traces:
       receivers: [otlp]
       processors: [batch]
-      exporters: [zipkin, jaeger, file, newrelic]
+      exporters: [zipkin, jaeger, file]
+    logs:
+      receivers: [filelog, otlp]
+      processors: [batch]
+      exporters: [file/2]

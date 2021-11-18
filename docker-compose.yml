@@ -33,6 +33,7 @@ services:
     volumes:
       - ./otel-collector-config.yaml:/etc/otel-collector-config.yaml
       - ./data/:/usr/data/
+      - ./applogs/:/usr/src/logs/
     ports:
       - "1888:1888"   # pprof extension
       - "8888:8888"   # Prometheus metrics exposed by the collector
@@ -61,10 +62,11 @@ services:
       - OTEL_RESOURCE_ATTRIBUTES=service.name=reg
       - JAVA_OPTIONS="-Dotel.metrics.exporter=none -Dota.exporter=otlp -Dotel.traces.exporter=otlp -Dotel.exporter.otlp.traces.endpoint=http://otelagent:4317 -Dotel.resource.attributes=service.name=registration -Dotel.javaagent.debug=false -Dotel.instrumentation.jdbc-datasource.enabled=true"
       - JAVA_TOOL_OPTIONS="-javaagent:opentelemetry-javaagent-all.jar"
-    command: ["-jar", "app.jar", "registration"]
+    command: ["-Djava.util.logging.config.file=logging.properties","-jar", "app.jar", "registration"]
     volumes:
       - ./opentelemetry-javaagent-all.jar:/usr/src/app/opentelemetry-javaagent-all.jar
       - ./otel.props:/usr/src/app/otel.props
+      - ./applogs/:/usr/src/logs/
     ports:
       - "1111:1111"
     networks:
@@ -85,12 +87,15 @@ services:
       - OTEL_RESOURCE_ATTRIBUTES=service.name=acc
       - JAVA_OPTIONS="-Dotel.metrics.exporter=none -Dota.exporter=otlp -Dotel.traces.exporter=otlp -Dotel.exporter.otlp.traces.endpoint=http://otelagent:4317 -Dotel.resource.attributes=service.name=accounts -Dotel.javaagent.debug=false -Dotel.instrumentation.jdbc-datasource.enabled=true"
       - JAVA_TOOL_OPTIONS="-javaagent:opentelemetry-javaagent-all.jar"
-    command: ["-jar", "app.jar", "accounts","--registration.server.hostname=reg"]
+    command: ["-Djava.util.logging.config.file=logging.properties","-jar", "app.jar", "accounts","--registration.server.hostname=reg"]
     volumes:
       - ./opentelemetry-javaagent-all.jar:/usr/src/app/opentelemetry-javaagent-all.jar
       - ./otel.props:/usr/src/app/otel.props
+      - ./applogs/:/usr/src/logs/
     ports:
       - "2222:2222"
+    depends_on:
+      - reg
     networks:
       microservice-demo-network:
         aliases:
@@ -109,10 +114,11 @@ services:
       - OTEL_RESOURCE_ATTRIBUTES=service.name=web
       - JAVA_OPTIONS="-Dotel.metrics.exporter=none -Dota.exporter=otlp -Dotel.traces.exporter=otlp -Dotel.exporter.otlp.traces.endpoint=http://otelagent:4317 -Dotel.resource.attributes=service.name=Frontend -Dotel.javaagent.debug=false -Dotel.instrumentation.jdbc-datasource.enabled=true"
       - JAVA_TOOL_OPTIONS="-javaagent:opentelemetry-javaagent-all.jar"
-    command: ["-jar", "app.jar", "web","--registration.server.hostname=reg"]
+    command: ["-Djava.util.logging.config.file=logging.properties","-jar", "app.jar", "web","--registration.server.hostname=reg"]
     volumes:
       - ./opentelemetry-javaagent-all.jar:/usr/src/app/opentelemetry-javaagent-all.jar
       - ./otel.props:/usr/src/app/otel.props
+      - ./applogs/:/usr/src/logs/
     ports:
       - "3333:3333"
     depends_on:
