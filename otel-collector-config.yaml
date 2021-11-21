@@ -15,12 +15,17 @@ receivers:
   #    flush_interval: 100ms
   filelog:
     include: [ /usr/src/logs/web.log ]
-    start_at: beginning
+    start_at: end
     encoding: nop
     include_file_path: true
     operators:
+      - type: metadata
+        attributes:
+          logtype: "otel-applog"
+        resource:
+          instance: "demo-1"
       - type: regex_parser
-        regex: '^(?P<time>\d{4}-\d{2}-\d{2}\s\d{2}:\d{2}:\d{2})\s-\s(?P<sev>[a-zA-Z]+)\s+-\s(?P<msg>.*)\s(?P<trid>trace_id=)(?P<traceid>.*)\s(?P<spid>span_id=)(?P<spanid>.*)\s(?P<tflg>trace_flags=.*)(?P<traceflag>.*)$$'
+        regex: '^(?P<time>\d{4}-\d{2}-\d{2}\s\d{2}:\d{2}:\d{2})\s-\s(?P<sev>[a-zA-Z]+)\s+-\s(?P<msg>.*)\s(trace_id=)(?P<traceid>.*)\s(span_id=)(?P<spanid>.*)\s(trace_flags=.*)(?P<traceflag>.*)$'
         timestamp:
           parse_from: time
           layout: '%Y-%m-%d %H:%M:%S'
@@ -30,6 +35,9 @@ receivers:
           parse_from: traceid
         spanId:
           parse_from: spanid
+        message:
+          parse_from: msg
+          parse_to: message
     converter:
       max_flush_count: 10
       flush_interval: 100ms
@@ -47,9 +55,9 @@ exporters:
     insecure: true
   
   file:
-    path: /usr/data/traces.json
+    path: /usr/data/oteltrace.json
   file/2:
-    path: /usr/data/logs.json
+    path: /usr/data/otellogs.json
   
 processors:
   batch:
@@ -67,8 +75,8 @@ service:
     traces:
       receivers: [otlp]
       processors: [batch]
-      exporters: [zipkin, jaeger, file]
+      exporters: [zipkin, jaeger, file,site24x7]
     logs:
       receivers: [filelog, otlp]
       processors: [batch]
-      exporters: [file/2]
+      exporters: [file/2, site24x7/2]
