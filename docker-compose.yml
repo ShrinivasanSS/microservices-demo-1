@@ -1,29 +1,29 @@
 version: "2"
 services:
   # Jaeger
-  jaeger-all-in-one:
-    image: jaegertracing/all-in-one:latest
-    env_file:
-      - proxy.env
-    ports:
-      - "16686:16686"
-      - "14268"
-      - "14250"
-    networks:
-      microservice-demo-network:
-        aliases:
-          - jaeger
-  # Zipkin
-  zipkin-all-in-one:
-    image: openzipkin/zipkin:latest
-    env_file:
-      - proxy.env
-    ports:
-      - "9411:9411"
-    networks:
-      microservice-demo-network:
-        aliases:
-          - zipkin
+  #jaeger-all-in-one:
+  #  image: jaegertracing/all-in-one:latest
+  #  env_file:
+  #    - proxy.env
+  #  ports:
+  #    - "16686:16686"
+  #    - "14268"
+  #    - "14250"
+  #  networks:
+  #    microservice-demo-network:
+  #      aliases:
+  #        - jaeger
+  ## Zipkin
+  #zipkin-all-in-one:
+  #  image: openzipkin/zipkin:latest
+  #  env_file:
+  #    - proxy.env
+  #  ports:
+  #    - "9411:9411"
+  #  networks:
+  #    microservice-demo-network:
+  #      aliases:
+  #        - zipkin
   #Opentelemetry collector
   otel-collector:
     image: ${OTELCOL_IMG}
@@ -41,9 +41,9 @@ services:
       - "13133:13133" # health_check extension
       - "4317:4317"   # OTLP gRPC receiver
       - "55670:55679" # zpages extension
-    depends_on:
-      - jaeger-all-in-one
-      - zipkin-all-in-one
+    #depends_on:
+    #  - jaeger-all-in-one
+    #  - zipkin-all-in-one
     networks:
       microservice-demo-network:
         aliases:
@@ -66,7 +66,7 @@ services:
     volumes:
       - ./opentelemetry-javaagent-all.jar:/usr/src/app/opentelemetry-javaagent-all.jar
       - ./otel.props:/usr/src/app/otel.props
-      - ./applogs/:/usr/src/logs/
+      - ./applogs/reg.log:/usr/src/logs/web.log
     ports:
       - "1111:1111"
     networks:
@@ -91,7 +91,7 @@ services:
     volumes:
       - ./opentelemetry-javaagent-all.jar:/usr/src/app/opentelemetry-javaagent-all.jar
       - ./otel.props:/usr/src/app/otel.props
-      - ./applogs/:/usr/src/logs/
+      - ./applogs/acc.log:/usr/src/logs/web.log
     ports:
       - "2222:2222"
     depends_on:
@@ -118,7 +118,7 @@ services:
     volumes:
       - ./opentelemetry-javaagent-all.jar:/usr/src/app/opentelemetry-javaagent-all.jar
       - ./otel.props:/usr/src/app/otel.props
-      - ./applogs/:/usr/src/logs/
+      - ./applogs/web.log:/usr/src/logs/web.log
     ports:
       - "3333:3333"
     depends_on:
@@ -128,6 +128,20 @@ services:
       microservice-demo-network:
         aliases:
           - web
+  #Generate traffic
+  loadtest:
+    image: ${CRON_IMG}
+    volumes:
+      - ./loadtestcron/crontask.sh:/home/cron/test.sh
+      - ./data/loadtest.log:/var/log/cron.log
+    depends_on:
+      - reg
+      - acc
+      - web    
+    networks:
+      microservice-demo-network:
+        aliases:
+          - loadtest
 
 networks:
   microservice-demo-network:
